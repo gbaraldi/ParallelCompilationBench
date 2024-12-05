@@ -31,11 +31,11 @@ Threads.@threads :static for i in 1:threads
 end
 
 f0 = eval(gencode(0))
-invokelatest(f0, t, p1, p2)
+invokelatest(f0, 1, p1, p2)
 
 display_if("Finished all setup work")
 
-function work(fs, p1, p2)
+function work(p1, p2)
     Threads.@threads for i in 1:threads
         t = Ptr{Val{i+threads}}()
         local start = time_ns()
@@ -44,7 +44,7 @@ function work(fs, p1, p2)
     end
 end
 
-@my_time work(fs, p1, p2)
+@my_time work(p1, p2)
 
 display_if("Finished all work")
 
