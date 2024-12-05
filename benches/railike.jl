@@ -19,6 +19,7 @@
 # A query plan, represented as a tree, with the full plan specified
 # in the type domain. We specialize an instance of this query plan
 # tree to represent a query.
+include("../utils.jl")
 struct MaterializedRelation{T}
     tuples::Vector{T}
 end
@@ -180,12 +181,12 @@ function parallel_bench()
     bench2!(results)
 end
 # Same 2 queries lots and lots of times in parallel. (Can't parallelize more than 2x.)
-bench1!(results) = @time @sync for _ in 1:1000
+bench1!(results) = @sync for _ in 1:1000
     Threads.@spawn results[1] = @eval iterate($(test1()))
     Threads.@spawn results[2] = @eval iterate($(test2()))
 end
 # Lots of different queries in different threads
-bench2!(results) = @time @sync for i in 1:20
+bench2!(results) = @sync for i in 1:20
     Threads.@spawn begin
         # inferencebarrier simulates user input - we can't compile ahead of time
         r = Base.inferencebarrier(test_construct_N)(i, 2)
@@ -194,5 +195,5 @@ bench2!(results) = @time @sync for i in 1:20
 end
 
 if !Base.isinteractive()
-    parallel_bench()
+    @my_time parallel_bench()
 end

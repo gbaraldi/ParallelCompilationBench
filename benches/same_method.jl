@@ -1,5 +1,10 @@
-const p1 = Val(200)
-const p2 = Val(200)
+# Compiles one method with many method instances, all threads on the same method
+# This stresses MI insertion
+
+# These values can be much larger on master (around 200) since compiling this code has gotten much faster
+include("../utils.jl")
+const p1 = Val(10)
+const p2 = Val(10)
 
 f(::Val{X}) where X = X
 
@@ -26,14 +31,9 @@ Threads.@threads :static for i in 1:threads
 end
 
 f0 = eval(gencode(0))
+invokelatest(f0, t, p1, p2)
 
-fs = [f0 for i in 1:threads]
-
-for i in 1:threads
-    invokelatest(fs[i], 1, p1, p2)
-end
-
-display("Finished all setup work")
+display_if("Finished all setup work")
 
 function work(fs, p1, p2)
     Threads.@threads for i in 1:threads
@@ -44,11 +44,18 @@ function work(fs, p1, p2)
     end
 end
 
-work(fs, p1, p2)
+@my_time work(fs, p1, p2)
 
-display("Finished all work")
+display_if("Finished all work")
 
+max_t = 0
 for i in 1:threads
+    global max_t
+    time_t = ptimes[i] / 1e9
+    if time_t > max_t
+        max_t = time_t
+    end
     time = ptimes[i] / 1e9
-    display("Thread $i took $time seconds")
+    display_if("Thread $i took $time seconds")
 end
+

@@ -1,7 +1,10 @@
+# This compiles lots of closures which seem to stress the codegen lock, and specifically
+# with inference being parallel the LLVM lock
+include("../utils.jl")
 function bench()
     N = 10000
     out = Vector{Int}(undef, N);
-    @time @sync for i in 1:N
+    @sync for i in 1:N
         Threads.@spawn begin
             f = @eval (x) -> x + $i
             v = @eval $f(1)
@@ -11,4 +14,4 @@ function bench()
     @assert sum(out) == sum(1:N) + N
 end
 
-bench()
+@my_time bench()
